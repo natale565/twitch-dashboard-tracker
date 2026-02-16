@@ -1,6 +1,6 @@
 import express from 'express';
 import pg from 'pg';
-import dotenv from 'dotenv'
+import dotenv from 'dotenv';
 
 const { Pool } = pg;
 dotenv.config();
@@ -22,6 +22,7 @@ app.get('/db-test', async function(req, res) {
 })
 
 const app = express();
+
 app.get('/health', function(req, res){res.send({ok : true})} );
 app.listen(3001);
 
