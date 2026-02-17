@@ -12,7 +12,7 @@ app.use(express.json())
 
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+connectionString: process.env.DATABASE_URL,
 });
 
 app.post('/auth/register', async function(req, res){
@@ -25,7 +25,10 @@ app.post('/auth/register', async function(req, res){
     }
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    res.send(hashedPassword);
+    //res.send(hashedPassword);
+
+    const result = await pool.query('INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username, created_at', [username, hashedPassword])
+    res.status(201).send(result.rows[0])
 })
 
 
