@@ -1,10 +1,10 @@
 import express from 'express';
 import pg from 'pg';
 import dotenv from 'dotenv';
+import bcrypt from 'bcrypt';
 
 const { Pool } = pg;
 dotenv.config();
-console.log('DB URL exists?', Boolean(process.env.DATABASE_URL));
 
 
 const app = express();
@@ -16,8 +16,13 @@ const pool = new Pool({
 });
 
 app.post('/auth/register', async function(req, res){
-    console.log(req.body)
-    res.send('received!')
+    const username = req.body.username;
+    const password = req.body.password;
+    if (( !username ) || ( !password )){
+        res.status(400).send('username and password required')
+        console.log('username and password required')
+        return
+    }
 })
 
 app.get('/db-test', async function(req, res) {
