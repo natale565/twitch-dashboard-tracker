@@ -23,7 +23,11 @@ app.post('/auth/register', async function(req, res){
         console.log('username and password required')
         return
     }
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    res.send(hashedPassword);
 })
+
 
 app.get('/db-test', async function(req, res) {
     try {
