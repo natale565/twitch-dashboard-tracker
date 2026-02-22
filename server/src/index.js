@@ -45,9 +45,8 @@ app.post('/auth/login', async function(req, res) {
         console.log('invalid credentials');
         return;
     }
-    else {
-        res.status(200).json(safeUser);
-    }
+    
+    res.status(200).json(safeUser);
     
 });
 
