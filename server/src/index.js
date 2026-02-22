@@ -15,10 +15,46 @@ const pool = new Pool({
 connectionString: process.env.DATABASE_URL,
 });
 
+app.post('/auth/login', async function(req, res) {
+    const username = req.body.username;
+    const password = req.body.password;
+    if ( (!username) || ( !password) ){
+        res.status(400).send('username and password required')
+        console.log('username and password required')
+        return
+    }
+
+    
+    const result = await pool.query('SELECT id, username, password_hash, created_at FROM users WHERE username = $1', [username])
+    if (result.rows.length === 0){
+        res.status(401).send('invalid credentials');
+        console.log('invalid credentials');
+        return
+    }
+
+    const user = result.rows[0];
+    const safeUser = {
+    id: user.id,
+    username: user.username,
+    createdAt: user.created_at,
+    };
+    
+    const match = await bcrypt.compare(password, user.password_hash)
+    if (!match){
+        res.status(401).send('invalid credentials');
+        console.log('invalid credentials');
+        return;
+    }
+    else {
+        res.status(200).json(safeUser);
+    }
+    
+});
+
 app.post('/auth/register', async function(req, res){
     const username = req.body.username;
     const password = req.body.password;
-    if (( !username ) || ( !password )){
+    if ( ( !username ) || ( !password ) ){
         res.status(400).send('username and password required')
         console.log('username and password required')
         return
