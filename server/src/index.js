@@ -27,8 +27,18 @@ app.post('/auth/register', async function(req, res){
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     //res.send(hashedPassword);
 
+    try {
     const result = await pool.query('INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username, created_at', [username, hashedPassword])
     res.status(201).send(result.rows[0])
+    }
+    catch (error){
+        if (error.code == '23505'){
+            res.status(409).send('username already taken')
+        }
+        else {
+            res.status(500).send('server error')
+        }
+    }
 })
 
 
