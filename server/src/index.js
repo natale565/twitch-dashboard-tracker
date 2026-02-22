@@ -2,6 +2,7 @@ import express from 'express';
 import pg from 'pg';
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 const { Pool } = pg;
 dotenv.config();
@@ -24,11 +25,19 @@ app.post('/auth/login', async function(req, res) {
         return
     }
 
-    
-    const result = await pool.query('SELECT id, username, password_hash, created_at FROM users WHERE username = $1', [username])
+    let result;
+
+    try {
+    result = await pool.query('SELECT id, username, password_hash, created_at FROM users WHERE username = $1', [username])
     if (result.rows.length === 0){
         res.status(401).send('invalid credentials');
         console.log('invalid credentials');
+        return
+    }
+    }
+    catch(error) {
+        res.status(500).send('server error');
+        console.log(error)
         return
     }
 
@@ -46,7 +55,11 @@ app.post('/auth/login', async function(req, res) {
         return;
     }
     
-    res.status(200).json(safeUser);
+    const token = jwt.sign({ sub: user.id,username: user.username },process.env.JWT_SECRET,
+    { expiresIn: '1h'});
+
+    res.status(200).json({user: safeUser, token});
+
     
 });
 
@@ -67,7 +80,7 @@ app.post('/auth/register', async function(req, res){
     res.status(201).send(result.rows[0])
     }
     catch (error){
-        if (error.code == '23505'){
+        if (error.code === '23505'){
             res.status(409).send('username already taken')
         }
         else {
@@ -91,6 +104,7 @@ app.get('/db-test', async function(req, res) {
 
 app.get('/health', function(req, res){res.send({ok : true})} );
 app.listen(3001);
+
 
 console.log(typeof app);
 console.log("starting...");
