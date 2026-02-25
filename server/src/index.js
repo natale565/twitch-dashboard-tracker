@@ -16,6 +16,33 @@ const pool = new Pool({
 connectionString: process.env.DATABASE_URL,
 });
 
+function authMiddleware(req, res, next) {
+    const authHeader = req.headers.authorization
+
+    if (!authHeader){
+        res.status(401).send('Missing authentication credentials');
+        console.log('Missing authentication credentials');
+        return
+    }
+    if (!authHeader.startsWith('Bearer ')){
+        res.status(401).send('Missing authentication credentials');
+        console.log('Missing authentication credentials');
+        return
+    }
+    const token = authHeader.replace('Bearer ', '') 
+
+    try {
+        const decodedPayload = jwt.verify(token, process.env.JWT_SECRET)
+        req.user = decodedPayload;
+        next();
+    }
+    catch(error){
+        res.status(401).send('Missing authentication credentials')
+        console.log('Missing authentication credentials');
+        return
+    }
+}
+
 app.post('/auth/login', async function(req, res) {
     const username = req.body.username;
     const password = req.body.password;
@@ -60,7 +87,7 @@ app.post('/auth/login', async function(req, res) {
 
     res.status(200).json({user: safeUser, token});
 
-    
+
 });
 
 app.post('/auth/register', async function(req, res){
@@ -73,7 +100,6 @@ app.post('/auth/register', async function(req, res){
     }
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    //res.send(hashedPassword);
 
     try {
     const result = await pool.query('INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username, created_at', [username, hashedPassword])
@@ -87,6 +113,10 @@ app.post('/auth/register', async function(req, res){
             res.status(500).send('server error')
         }
     }
+})
+
+app.get('/auth/me', authMiddleware, (req, res) => {
+    return res.send(req.user)
 })
 
 
