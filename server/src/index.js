@@ -121,7 +121,7 @@ app.post('/favorites', authMiddleware, async function(req, res){
 
     if (!streamer_name){
         res.status(400).json({ error: 'streamer name required'});
-        console.log('streamer name required');
+        console.log('Streamer name required');
         return
     }
 
@@ -143,6 +143,21 @@ app.post('/favorites', authMiddleware, async function(req, res){
         }
     }
 })
+
+app.get('/favorites', authMiddleware, async (req, res) =>{
+    const user_id = req.user.sub;
+
+    try{
+    const result = await pool.query('SELECT id, user_id, streamer_name, created_at FROM favorite_streamer WHERE user_id = $1 ORDER BY created_at DESC', [user_id])
+    return res.status(200).json(result.rows)
+    }
+    catch(error){
+        res.status(500).json({error: 'server error'})
+        console.log('Server error')
+        return
+    }
+
+});
 
 app.get('/auth/me', authMiddleware, (req, res) => {
     return res.send(req.user)
