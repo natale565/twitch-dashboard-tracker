@@ -94,8 +94,8 @@ app.post('/auth/register', async function(req, res){
     const username = req.body.username;
     const password = req.body.password;
     if ( ( !username ) || ( !password ) ){
-        res.status(400).send('username and password required')
-        console.log('username and password required')
+        res.status(400).send('username and password required');
+        console.log('username and password required');
         return
     }
     const saltRounds = 10;
@@ -111,6 +111,35 @@ app.post('/auth/register', async function(req, res){
         }
         else {
             res.status(500).send('server error')
+        }
+    }
+})
+
+app.post('/favorites', authMiddleware, async function(req, res){
+    const streamer_name = req.body.streamer_name;
+    const user_id = req.user.sub;
+
+    if (!streamer_name){
+        res.status(400).json({ error: 'streamer name required'});
+        console.log('streamer name required');
+        return
+    }
+
+    try {
+        const result = await pool.query('INSERT INTO favorite_streamer (user_id, streamer_name) VALUES ($1, $2) RETURNING id, user_id, streamer_name', [user_id, streamer_name])
+        res.status(201).json(result.rows[0])
+        return
+    }
+    catch(error) {
+        if (error.code === '23505') {
+            res.status(409).json({ error: 'Streamer already added' });
+            console.log('Streamer already added');
+            return
+        }
+        else {
+            res.status(500).json({error: 'server error'})
+            console.log(error);
+            return
         }
     }
 })
