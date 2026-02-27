@@ -17,7 +17,7 @@ connectionString: process.env.DATABASE_URL,
 });
 
 function authMiddleware(req, res, next) {
-    const authHeader = req.headers.authorization
+    const authHeader = req.headers.authorization;
 
     if (!authHeader){
         res.status(401).send('Missing authentication credentials');
@@ -86,8 +86,6 @@ app.post('/auth/login', async function(req, res) {
     { expiresIn: '1h'});
 
     res.status(200).json({user: safeUser, token});
-
-
 });
 
 app.post('/auth/register', async function(req, res){
@@ -163,6 +161,28 @@ app.get('/auth/me', authMiddleware, (req, res) => {
     return res.send(req.user)
 })
 
+app.delete('/favorites/:id', authMiddleware, async (req, res) => {
+    const {id} = req.params;
+    const user_id = req.user.sub;
+    try {
+    const result = await pool.query('DELETE FROM favorite_streamer WHERE id=$1 AND user_id=$2 RETURNING * ',[id, user_id]);
+    if (result.rows.length === 0){
+        res.status(404).send()
+        console.log('Delete successful')
+        return
+    }
+    else{
+        res.status(204).send()
+        return
+    }
+}
+    catch(error){
+        res.status(500).json({error: 'Database Failed'})
+        console.log('Database Failed', error)
+        return
+    }
+})
+
 
 app.get('/db-test', async function(req, res) {
     try {
@@ -170,8 +190,8 @@ app.get('/db-test', async function(req, res) {
         res.send(result.rows[0])
     }
     catch(error){
-        console.log('database failed', error)
-        res.status(500).send('database failed');
+        console.log('Database Failed', error)
+        res.status(500).send('Database Failed');
     }
     
 })
